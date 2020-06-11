@@ -93,7 +93,8 @@ static enum {
     UL_EV0,
     UL_C,
     UL_EV1,
-    UL_NTAG_215
+    UL_NTAG_215,
+    AMIIBO
 } Flavor;
 
 static enum {
@@ -216,6 +217,19 @@ static void AppInitNTAG215Common(void) {
     AppInitCommon();
 }
 
+static void AppInitAmiiboCommon(void) {
+    uint8_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
+    uint8_t Access;
+
+    /* Set up the emulation flavor */
+    Flavor = AMIIBO;
+    /* Fetch some of the configuration into RAM */
+    MemoryReadBlock(&FirstAuthenticatedPage, ConfigAreaAddress + CONF_AUTH0_OFFSET, 1);
+    MemoryReadBlock(&Access, ConfigAreaAddress + CONF_ACCESS_OFFSET, 1);
+    ReadAccessProtected = !!(Access & CONF_ACCESS_PROT);
+    AppInitCommon();
+}
+
 void MifareUltralightEV11AppInit(void) {
     PageCount = MIFARE_ULTRALIGHT_EV11_PAGES;
     AppInitEV1Common();
@@ -229,6 +243,11 @@ void MifareUltralightEV12AppInit(void) {
 void MifareUltralightNTAG215AppInit(void) {
     PageCount = MIFARE_ULTRALIGHT_NTAG_215_PAGES;
     AppInitNTAG215Common();
+}
+
+void AmiiboAppInit(void) {
+    PageCount = MIFARE_ULTRALIGHT_NTAG_215_PAGES;
+    AppInitAmiiboCommon();
 }
 
 void MifareUltralightAppReset(void) {
@@ -482,21 +501,26 @@ static uint16_t AppProcess(uint8_t *const Buffer, uint16_t ByteCount) {
             case CMD_PWD_AUTH: {
                 uint8_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
                 uint8_t Password[4];
-
-                /* Verify value and increment authentication attempt counter */
-                if (!AuthCounterIncrement()) {
-                    /* Too many failed attempts */
-                    Buffer[0] = NAK_AUTH_FAILED;
-                    return NAK_FRAME_SIZE;
+ 
+                if (Flavor == AMIIBO) {
+                    Buffer[0] = 0x80;
+                    Buffer[1] = 0x80;
+                } else {
+                    /* Verify value and increment authentication attempt counter */
+                    if (!AuthCounterIncrement()) {
+                        /* Too many failed attempts */
+                        Buffer[0] = NAK_AUTH_FAILED;
+                        return NAK_FRAME_SIZE;
+                    }
+                    /* Read and compare the password */
+                    MemoryReadBlock(Password, ConfigAreaAddress + CONF_PASSWORD_OFFSET, 4);
+                    if (Password[0] != Buffer[1] || Password[1] != Buffer[2] || Password[2] != Buffer[3] || Password[3] != Buffer[4]) {
+                        Buffer[0] = NAK_AUTH_FAILED;
+                        return NAK_FRAME_SIZE;
+                    }
+                    /* Authenticate the user */
+                    AuthCounterReset();
                 }
-                /* Read and compare the password */
-                MemoryReadBlock(Password, ConfigAreaAddress + CONF_PASSWORD_OFFSET, 4);
-                if (Password[0] != Buffer[1] || Password[1] != Buffer[2] || Password[2] != Buffer[3] || Password[3] != Buffer[4]) {
-                    Buffer[0] = NAK_AUTH_FAILED;
-                    return NAK_FRAME_SIZE;
-                }
-                /* Authenticate the user */
-                AuthCounterReset();
                 Authenticated = 1;
                 /* Send the PACK value back */
                 MemoryReadBlock(Buffer, ConfigAreaAddress + CONF_PACK_OFFSET, 2);

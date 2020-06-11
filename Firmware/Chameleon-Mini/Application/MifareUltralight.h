@@ -31,6 +31,7 @@ void MifareUltralightAppInit(void);
 void MifareUltralightEV11AppInit(void);
 void MifareUltralightEV12AppInit(void);
 void MifareUltralightNTAG215AppInit(void);
+void AmiiboAppInit(void);
 void MifareUltralightAppReset(void);
 void MifareUltralightAppTask(void);
 
