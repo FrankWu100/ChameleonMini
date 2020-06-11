@@ -205,7 +205,7 @@ static void AppInitEV1Common(void) {
 }
 
 static void AppInitNTAG215Common(void) {
-    uint8_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
+    uint16_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
     uint8_t Access;
 
     /* Set up the emulation flavor */
@@ -218,7 +218,7 @@ static void AppInitNTAG215Common(void) {
 }
 
 static void AppInitAmiiboCommon(void) {
-    uint8_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
+    uint16_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
     uint8_t Access;
 
     /* Set up the emulation flavor */
@@ -462,7 +462,7 @@ static uint16_t AppProcess(uint8_t *const Buffer, uint16_t ByteCount) {
                     Buffer[6] = PageCount == MIFARE_ULTRALIGHT_EV11_PAGES ? 0x0B : 0x0E;
                     Buffer[7] = 0x03;
                 } else { //VERSION RESPONSE FOR NTAG 215
-                    /* Provide hardcoded version response */ 
+                    /* Provide hardcoded version response */
                     Buffer[0] = 0x00;
                     Buffer[1] = 0x04;
                     Buffer[2] = 0x04;
@@ -499,9 +499,9 @@ static uint16_t AppProcess(uint8_t *const Buffer, uint16_t ByteCount) {
             }
 
             case CMD_PWD_AUTH: {
-                uint8_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
+                uint16_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
                 uint8_t Password[4];
- 
+
                 if (Flavor == AMIIBO) {
                     Buffer[0] = 0x80;
                     Buffer[1] = 0x80;
@@ -518,12 +518,13 @@ static uint16_t AppProcess(uint8_t *const Buffer, uint16_t ByteCount) {
                         Buffer[0] = NAK_AUTH_FAILED;
                         return NAK_FRAME_SIZE;
                     }
+
                     /* Authenticate the user */
                     AuthCounterReset();
+                    /* Send the PACK value back */
+                    MemoryReadBlock(Buffer, ConfigAreaAddress + CONF_PACK_OFFSET, 2);
                 }
                 Authenticated = 1;
-                /* Send the PACK value back */
-                MemoryReadBlock(Buffer, ConfigAreaAddress + CONF_PACK_OFFSET, 2);
                 ISO14443AAppendCRCA(Buffer, 2);
                 return (2 + ISO14443A_CRCA_SIZE) * 8;
             }
