@@ -217,19 +217,6 @@ static void AppInitNTAG215Common(void) {
     AppInitCommon();
 }
 
-static void AppInitAmiiboCommon(void) {
-    uint8_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
-    uint8_t Access;
-
-    /* Set up the emulation flavor */
-    Flavor = AMIIBO;
-    /* Fetch some of the configuration into RAM */
-    MemoryReadBlock(&FirstAuthenticatedPage, ConfigAreaAddress + CONF_AUTH0_OFFSET, 1);
-    MemoryReadBlock(&Access, ConfigAreaAddress + CONF_ACCESS_OFFSET, 1);
-    ReadAccessProtected = !!(Access & CONF_ACCESS_PROT);
-    AppInitCommon();
-}
-
 void MifareUltralightEV11AppInit(void) {
     PageCount = MIFARE_ULTRALIGHT_EV11_PAGES;
     AppInitEV1Common();
@@ -246,8 +233,8 @@ void MifareUltralightNTAG215AppInit(void) {
 }
 
 void AmiiboAppInit(void) {
-    PageCount = MIFARE_ULTRALIGHT_NTAG_215_PAGES;
-    AppInitAmiiboCommon();
+    MifareUltralightNTAG215AppInit();
+    Flavor = AMIIBO;
 }
 
 void MifareUltralightAppReset(void) {
