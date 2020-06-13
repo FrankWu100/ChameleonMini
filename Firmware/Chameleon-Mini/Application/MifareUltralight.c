@@ -488,7 +488,12 @@ static uint16_t AppProcess(uint8_t *const Buffer, uint16_t ByteCount) {
             case CMD_PWD_AUTH: {
                 /* Hardcoded response for Amiibo*/
                 if (Flavor == AMIIBO) {
-                    /* Currently not implemented */
+                    Authenticated = 1;
+
+                    Buffer[0] = 0x80;
+                    Buffer[1] = 0x80;
+                    ISO14443AAppendCRCA(Buffer, 2);
+                    return (2 + ISO14443A_CRCA_SIZE) * 8;
                 }
 
                 uint8_t ConfigAreaAddress = PageCount * MIFARE_ULTRALIGHT_PAGE_SIZE - CONFIG_AREA_SIZE;
