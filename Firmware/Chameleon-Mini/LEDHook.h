@@ -10,17 +10,17 @@
 
 #include "Settings.h"
 
+void LEDHook(LEDHookEnum Func, LEDActionEnum Action);
+/*
 INLINE void LEDHook(LEDHookEnum Func, LEDActionEnum Action) {
     extern LEDActionEnum LEDGreenAction;
     extern LEDActionEnum LEDRedAction;
-
     if (GlobalSettings.ActiveSettingPtr->LEDGreenFunction == Func) {
         LEDGreenAction = Action;
     }
-
     if (GlobalSettings.ActiveSettingPtr->LEDRedFunction == Func) {
         LEDRedAction = Action;
     }
 }
-
+*/
 #endif /* LEDHOOK_H_ */

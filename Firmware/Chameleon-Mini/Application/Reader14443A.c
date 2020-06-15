@@ -5,6 +5,7 @@
 #include "../Codec/Reader14443-2A.h"
 #include "Crypto1.h"
 #include "../System.h"
+#include "../uartcmd.h"
 
 #include "../Terminal/Terminal.h"
 
@@ -139,8 +140,8 @@ uint16_t addParityBits(uint8_t *Buffer, uint16_t BitCount) {
 
 uint16_t removeParityBits(uint8_t *Buffer, uint16_t BitCount) {
     // Short frame, no parity bit is added
-    if (BitCount == 7)
-        return 7;
+    if (BitCount <= 7)
+        return BitCount;
 
     uint16_t i;
     for (i = 0; i < (BitCount / 9); i++) {
@@ -148,7 +149,7 @@ uint16_t removeParityBits(uint8_t *Buffer, uint16_t BitCount) {
         if (i % 8)
             Buffer[i] |= (Buffer[i + i / 8 + 1] << (8 - (i % 8)));
     }
-    return BitCount / 9 * 8;
+    return (BitCount / 9) * 8;
 }
 
 bool checkParityBits(uint8_t *Buffer, uint16_t BitCount) {
@@ -227,7 +228,7 @@ static uint16_t Reader14443A_Select(uint8_t *Buffer, uint16_t BitCount) {
     switch (ReaderState) {
         case STATE_IDLE:
         case STATE_HALT:
-            Reader_FWT = 4;
+            Reader_FWT = ISO14443A_RX_PENDING_TIMEOUT;
             /* Send a REQA */
             Buffer[0] = ISO14443A_CMD_WUPA; // whenever REQA works, WUPA also works, so we choose WUPA always
             ReaderState = STATE_READY;
